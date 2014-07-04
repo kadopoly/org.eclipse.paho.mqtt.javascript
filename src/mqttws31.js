@@ -1469,7 +1469,63 @@ Paho.MQTT = (function (global) {
 				}
 				if (i === 0) this._traceBuffer.push(arguments[i]);
 				else if (typeof arguments[i] === "undefined" ) this._traceBuffer.push(arguments[i]);
-				else this._traceBuffer.push("  "+JSON.stringify(arguments[i]));
+				else {
+
+					// replacer for JSON.stringify,
+					// which can deal with cyclic references
+					var stringify = function(value, stack) {
+						if (value instanceof Function) {
+							return undefined;
+						} else if (value instanceof Array) {
+
+							if (stack.indexOf(value) !== -1) {
+								return "[ ... ]";
+							}
+							stack.push( value );
+
+							var children = [];
+							for (var i = 0; i < value.length; ++i) {
+								var str = stringify(value[i], [].concat(stack));
+								if (str) {
+									children.push(str);
+								}
+							}
+							return "[ " + children.join(", ") + " ]";
+
+						} else if (value instanceof Object) {
+
+							if (stack.indexOf(value) !== -1) {
+								return "{ ... }";
+							}
+							stack.push( value );
+
+							var children = [];
+							for (var name in value) {
+								var str = stringify(value[name], [].concat(stack));
+								if (str) {
+									children.push(name + ": " + str);
+								}
+							}
+							return "{ " + children.join(", ") + " }";
+
+						} else {
+							return (value.toJSON || value.toString).call(value);
+						}
+					};
+
+					try {
+						this._traceBuffer.push(
+							"  "
+							+
+							stringify( arguments[i], [] )
+						);
+					} catch (exception) {
+						// oops, we got some errors on stringifying!
+						console.error( exception );
+						this._traceBuffer.push("  { ? }");
+					}
+
+				}
 		   };
 		};
 	};
