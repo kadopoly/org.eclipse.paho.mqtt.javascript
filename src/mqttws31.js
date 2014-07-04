@@ -1293,8 +1293,7 @@ Paho.MQTT = (function (global) {
 				if (sentMessage) {
 					if(sentMessage.timeOut)
 						sentMessage.timeOut.cancel();
-					wireMessage.returnCode.indexOf = Array.prototype.indexOf;
-					if (wireMessage.returnCode.indexOf(0x80) !== -1) {
+					if (Array.prototype.indexOf.call(wireMessage.returnCode,0x80) !== -1) {
 						if (sentMessage.onFailure) {
 							sentMessage.onFailure(wireMessage.returnCode);
 						} 
